@@ -27,27 +27,36 @@ type BackendGR struct {
 	password string
 	db       int
 	// If set, path to a socket file overrides hostname
-	socketPath string
-	redsync    *redsync.Redsync
-	redisOnce  sync.Once
+	socketPath       string
+	redsync          *redsync.Redsync
+	redisOnce        sync.Once
+	sentinelPassword string
 }
 
 // NewGR creates Backend instance
-func NewGR(cnf *config.Config, addrs []string, db int) iface.Backend {
+func NewGR(cnf *config.Config, addrs []string, db int, sPasswd string) iface.Backend {
 	b := &BackendGR{
-		Backend: common.NewBackend(cnf),
+		Backend:          common.NewBackend(cnf),
+		sentinelPassword: sPasswd,
 	}
 	parts := strings.Split(addrs[0], "@")
 	if len(parts) >= 2 {
 		// with passwrod
 		b.password = strings.Join(parts[:len(parts)-1], "@")
+		b.sentinelPassword = b.password
 		addrs[0] = parts[len(parts)-1] // addr is the last one without @
+	}
+	//this will ignore the face that you passed password in redis uri
+	if sPasswd != "" {
+		b.password = sPasswd
+		b.sentinelPassword = sPasswd
 	}
 
 	ropt := &redis.UniversalOptions{
-		Addrs:    addrs,
-		DB:       db,
-		Password: b.password,
+		Addrs:            addrs,
+		DB:               db,
+		Password:         b.password,
+		SentinelPassword: b.sentinelPassword,
 	}
 	if cnf.Redis != nil {
 		ropt.MasterName = cnf.Redis.MasterName
