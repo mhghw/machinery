@@ -59,7 +59,7 @@ func BrokerFactory(cnf *config.Config) (brokeriface.Broker, error) {
 		}
 		brokers := strings.Split(parts[1], ",")
 		if len(brokers) > 1 || (cnf.Redis != nil && cnf.Redis.ClusterMode) {
-			return redisbroker.NewGR(cnf, brokers, 0), nil
+			return redisbroker.NewGR(cnf, brokers, 0, ""), nil
 		} else {
 			redisHost, redisPassword, redisDB, err := ParseRedisURL(cnf.Broker)
 			if err != nil {

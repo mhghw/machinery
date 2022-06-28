@@ -37,21 +37,28 @@ type BrokerGR struct {
 }
 
 // NewGR creates new Broker instance
-func NewGR(cnf *config.Config, addrs []string, db int) iface.Broker {
+func NewGR(cnf *config.Config, addrs []string, db int, sPasswd string) iface.Broker {
 	b := &BrokerGR{Broker: common.NewBroker(cnf)}
 
-	var password string
+	var password, sentinelPassword string
 	parts := strings.Split(addrs[0], "@")
 	if len(parts) >= 2 {
 		// with password
 		password = strings.Join(parts[:len(parts)-1], "@")
+		sentinelPassword = password
 		addrs[0] = parts[len(parts)-1] // addr is the last one without @
+	}
+	//this will ignore the fact that you passed password in redis uri
+	if sPasswd != "" {
+		password = sPasswd
+		sentinelPassword = sPasswd
 	}
 
 	ropt := &redis.UniversalOptions{
-		Addrs:    addrs,
-		DB:       db,
-		Password: password,
+		Addrs:            addrs,
+		DB:               db,
+		Password:         password,
+		SentinelPassword: sentinelPassword,
 	}
 	if cnf.Redis != nil {
 		ropt.MasterName = cnf.Redis.MasterName
